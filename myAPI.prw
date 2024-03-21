@@ -22,7 +22,8 @@ WSRESTFUL myAPI DESCRIPTION "Lancamentos (AKD)"
     //****************************************************************
     /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
     
-
+        Este bloco define um serviço web denominado myAPI, que trata de lançamentos de dados do tipo AKD. 
+        O método POST é configurado para aceitar requisições de inclusão de lançamentos.
     */
     //****************************************************************
 END WSRESTFUL 
@@ -45,6 +46,7 @@ WSMETHOD POST WSSERVICE myAPI
     //****************************************************************
     /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
     
+            Este bloco trata da execução do método POST, recebendo e processando os dados enviados na requisição.
 
     */
     //****************************************************************
@@ -53,6 +55,7 @@ WSMETHOD POST WSSERVICE myAPI
     //****************************************************************
     /* Com o seu conhecimento, descreva a utilização/finalidade da função acima:  
 
+            Define o tipo de conteúdo que será retornado na resposta da requisição como JSON.
 
     */
     //****************************************************************
@@ -85,6 +88,7 @@ WSMETHOD POST WSSERVICE myAPI
         //****************************************************************
         /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
         
+                Este bloco realiza a seleção das áreas de trabalho e a configuração da ordem de índices em algumas tabelas do banco de dados.
 
         */
         //****************************************************************
@@ -98,6 +102,15 @@ WSMETHOD POST WSSERVICE myAPI
             //****************************************************************
             /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
             
+            Neste trecho, estamos iterando sobre os elementos contidos no array oAKD:AAKD.
+            
+             For nFor := 1 to Len(oAKD:AAKD)': Este loop percorre todos os elementos do array.
+
+             AADD( aAKDRet, JsonObject():new() )': Aqui, estamos adicionando um novo objeto JSON ao array aAKDRet.
+
+            _nX := len(aAKDRet)': Calcula o comprimento atual do array aAKDRet.
+
+            'aAKDRet[_nX][ 'Indice' ]   := cValToChar(nFor)': Atribui ao índice 'Indice' do último elemento do array o valor do loop convertido para caracter.
 
             */
             //****************************************************************
@@ -201,6 +214,24 @@ WSMETHOD POST WSSERVICE myAPI
                 //****************************************************************
                 /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
                 
+                /* 
+                Neste bloco de código, estamos realizando uma série de verificações nos dados do objeto JSON recebido para garantir que estejam corretos e consistentes antes de prosseguir com o processamento.
+                - '_cFilial := oAKD:AAKD[nFor]:AKD_FILIAL': Atribui o valor do campo AKD_FILIAL do objeto JSON a uma variável local.
+                - 'If Empty(_cFilial)': Verifica se o campo AKD_FILIAL está vazio.
+                    - Se estiver vazio, define uma mensagem de erro no objeto aAKDRet e interrompe o loop.
+                - 'cChavePesq := "01"+_cFilial': Monta uma chave de pesquisa para consultar a tabela SM0.
+                - 'If SM0->(msSeek(cChavePesq))': Verifica se a filial existe na tabela SM0.
+                    - Se não existir, define uma mensagem de erro no objeto aAKDRet e interrompe o loop.
+                - 'cData := oAKD:AAKD[nFor]:AKD_DATA': Atribui o valor do campo AKD_DATA do objeto JSON a uma variável local.
+                - 'If Empty(cData)': Verifica se o campo AKD_DATA está vazio.
+                    - Se estiver vazio, define uma mensagem de erro no objeto aAKDRet e interrompe o loop.
+                - 'cHist := oAKD:AAKD[nFor]:AKD_HIST': Atribui o valor do campo AKD_HIST do objeto JSON a uma variável local.
+                - 'If Empty(cHist)': Verifica se o campo AKD_HIST está vazio.
+                    - Se estiver vazio, define uma mensagem de erro no objeto aAKDRet e interrompe o loop.
+                - E assim por diante, para cada campo que precisa ser validado.
+                */
+                //****************************************************************
+
 
                 */
                 //****************************************************************
@@ -221,7 +252,19 @@ WSMETHOD POST WSSERVICE myAPI
                 //****************************************************************
                 /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
                 
-
+                Neste trecho de código, estamos verificando se a variável _clote está vazia.
+                - 'If Empty(_clote)': Verifica se a variável _clote está vazia.
+                    - Se estiver vazia, significa que ainda não foi atribuído um valor a ela.
+                    - Dentro deste bloco, realizamos as seguintes operações:
+                        1. '_clote := GETSXENUM("AKD","AKD_LOTE","AKD" + _cFilial)': Obtém um número de lote da tabela AKD usando a função GETSXENUM, concatenando o código da filial ao prefixo "AKD".
+                        2. 'ConfirmSx8()': Confirma a execução da transação.
+                        3. 'While .T.': Inicia um loop infinito.
+                        4. 'If AKD->(msSeek(_cFilial + _clote))': Verifica se o número de lote já existe na tabela AKD.
+                            - Se existir, repete o processo para obter um novo número de lote.
+                            - Caso contrário, sai do loop.
+                        5. 'EndDo': Fim do loop.
+                - Este bloco de código garante que tenhamos um número de lote válido e único para cada transação na tabela AKD.
+                
                 */
                 //****************************************************************
 
@@ -256,6 +299,18 @@ WSMETHOD POST WSSERVICE myAPI
                 //****************************************************************
                 /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
                 
+                Nesta seção do código, estamos inserindo um novo registro na tabela AKD com os dados fornecidos.
+                - '_cID++': Incrementa o valor da variável _cID, que representa o identificador do registro.
+                - 'Begin Transaction': Inicia uma nova transação.
+                - 'If RecLock("AKD",.T.)': Realiza um bloqueio de registro na tabela AKD.
+                    - Se o bloqueio for bem-sucedido, o código dentro deste bloco é executado:
+                        - Os campos da tabela AKD são preenchidos com os valores correspondentes.
+                        - 'AKD->(MsUnLock())': Desbloqueia o registro.
+                        - A mensagem de sucesso e o número do lote são atribuídos ao array aAKDRet.
+                    - Caso contrário, se o bloqueio não for bem-sucedido, o código dentro do bloco 'Else' é executado:
+                        - A mensagem de falha e o número do lote são atribuídos ao array aAKDRet.
+                - Este bloco de código garante a inserção segura e controlada de um novo lançamento na tabela AKD, evitando conflitos e inconsistências.
+                */
 
                 */
                 //****************************************************************
@@ -270,6 +325,7 @@ WSMETHOD POST WSSERVICE myAPI
         //****************************************************************
         /* Com o seu conhecimento, descreva a utilização/finalidade da função acima:  
 
+            Esta função é usada para configurar um erro na resposta do serviço REST, caso o JSON não tenha sido especificado corretamente no corpo da requisição. O código de erro 12 é comumente usado para indicar erros relacionados à entrada de dados.
 
         */
         //****************************************************************
@@ -288,6 +344,7 @@ WSMETHOD POST WSSERVICE myAPI
     //****************************************************************
     /* Com o seu conhecimento, descreva o bloco de código lido até aqui:
     
+        Este bloco prepara a resposta do serviço REST com os dados processados. Um objeto JSON é criado para conter os resultados do processamento e é enviado como resposta à requisição.
 
     */
     //****************************************************************
@@ -303,6 +360,7 @@ Static Function fStrDatHor(cMsg)
     //****************************************************************
     /* Com o seu conhecimento, descreva a utilização/finalidade da função acima:  
 
+            Esta função é usada para registrar mensagens de log com a data, hora e uma mensagem específica. É útil para fins de depuração e acompanhamento do fluxo de execução do código.
 
     */
     //****************************************************************
